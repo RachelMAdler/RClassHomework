@@ -1,0 +1,95 @@
+---
+title: "Day 3 Homework"
+output: html_document
+---
+
+The goal of this homework is to get practice with manipulating data.
+
+### 1. Make both a "wide" and a "long" version of your data
+Reading in my data:
+```{r}
+library(reshape2)
+
+mydata <- read.csv("mydataHW3.csv")
+head(mydata)
+```
+
+Truncating my data:
+```{r}
+mydata <- mydata[, c("ID","LangCond","Block","OverallTrialNum","StimType","Accuracy","RT")]
+```
+
+My data are already in wide format:
+```{r}
+head(mydata)
+```
+
+Making a long(-er) version of my data:
+```{r}
+mydata.long <- melt(mydata, id.vars = c("ID","LangCond","Block","OverallTrialNum","StimType"))
+head(mydata.long)
+summary(mydata.long)
+```
+
+Converting my data back into wide format:
+```{r}
+mydata.wide <- dcast(mydata.long, ID + LangCond + Block + OverallTrialNum + StimType ~ variable, value.var = "value")
+head(mydata.wide)
+summary(mydata)
+```
+
+### 2. Transform a variable
+```{r}
+head(mydata)
+mydata$logRT <- log(mydata$RT)
+head(mydata)
+```
+
+### 3. Recode a factor
+```{r}
+# I tried to do it this way first, but I couldn't get it to work - it kept turning everything into NA, so I used the un-commented-out method below instead:
+# mydata$Block <- factor(mydata$Block, levels = c("B1","B2","B3"))
+
+summary(mydata$Block)
+mydata$Block <- as.character(mydata$Block)
+mydata$Block[mydata$Block=="Block1"] <- "B1"
+mydata$Block[mydata$Block=="Block2"] <- "B2"
+mydata$Block[mydata$Block=="Block3"] <- "B3"
+mydata$Block <- factor(mydata$Block)
+summary(mydata$Block)
+```
+
+### 4. Add a new factor, where the levels are conditional on the values of some other variable. E.g., a factor of "high", "medium", and "low" based on thresholds for another variable.
+```{r}
+mydata$outlier[mydata$RT < 400] <- "low"
+mydata$outlier[mydata$RT > 1200] <- "high"
+mydata$outlier[mydata$RT >= 400 & mydata$RT <= 1200] <- "ok"
+
+mydata$outlier <- factor(mydata$outlier)
+summary(mydata$outlier)
+```
+
+### 5. Reorder the levels of this new factor
+```{r}
+mydata$outlier <- factor(mydata$outlier, levels = c("ok","low","high"))
+summary(mydata$outlier)
+```
+
+### 6. Choose a factor that could be re-coded as multiple dimensions (recall the sepal/petal vs. length/width breakdown). If you don't have one, try to create one.  Now create two (or more) new factors that represent these dimensions.
+```{r}
+head(mydata)
+# Creating a factor that could be re-coded as multiple dimensions (combining the Block and StimType factors):
+mydata$Block.Stim <- paste(mydata$Block, mydata$StimType, sep=".")
+head(mydata)
+# Recoding the factor into multiple dimensions:
+mydata <- cbind(mydata, colsplit(mydata$Block.Stim, pattern = "\\.", names = c("newBlock", "newStimType")))
+head(mydata)
+```
+
+### 7. Using `dcast`, aggregate some variable into "cell means" of some kind.
+```{r}
+aggregatedata <- dcast(mydata, StimType ~ LangCond, value.var = "RT", fun.aggregate = mean)
+aggregatedata
+```
+
+### 8.  Save all of the above in a well-documented R Markdown document.  Email me the .Rmd file (and if you use different or updated data from Day 2 Homework, send that to me, too).

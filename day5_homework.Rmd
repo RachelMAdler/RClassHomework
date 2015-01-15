@@ -1,0 +1,253 @@
+---
+title: "Day 5 Homework"
+output:
+  html_document:
+    fig_height: 3
+    fig_width: 5
+    highlight: null
+    theme: journal
+---
+
+### Reading in and reformatting my data
+```{r}
+library(reshape2)
+library(ggplot2)
+
+mydata <- read.csv("mydataHW5.csv")
+```
+
+Renaming columns:
+```{r}
+oldcolnames <- colnames(mydata) # check what your column names are
+newcolnames <- c("ID","Lang", "Blk", "BlkTrlNum","TrlNum","Tar","Cue","TarPos","TarDir","Acc","RT","QP","DELE","Eng","Span","CSFreq","CSExp")
+colnames(mydata) <- newcolnames
+data.frame(oldcolnames, newcolnames) 
+head(mydata)
+```
+
+Renaming factors:
+```{r}
+mydata$Blk <- as.character(mydata$Blk)
+mydata$Blk[mydata$Blk=="Block1"] <- "B1"
+mydata$Blk[mydata$Blk=="Block2"] <- "B2"
+mydata$Blk[mydata$Blk=="Block3"] <- "B3"
+mydata$Blk <- factor(mydata$Blk)
+summary(mydata$Blk)
+```
+
+New dataframe with only the cognitive control data:
+```{r}
+CCdata <- mydata[, 1:11]
+head(CCdata)
+```
+
+New dataframe with only the bilingual participant language test and survey data:
+```{r}
+bildata <- mydata[, c(1:2, 12:17)]
+bildata <- droplevels(subset(bildata, Lang == "B"))
+head(bildata)
+
+# The below code creates a vector of numbers that start at 1 and adds 288 to each preceding number 32 times (because there are 32 ID numbers and each one repeats 288 times):
+temp <- 1 # vector to contain numbers
+x <- 1 # current number to be stored in vector
+for (i in 1:32) {
+  x <- x + 288
+  temp <- c(temp, x)
+}
+bildata <- bildata[temp, ]
+bildata <- bildata[!is.na(bildata$ID), ]
+```
+
+Saving both dataframes as CSV files to be used later:
+```{r}
+write.csv(CCdata,file = "CCdata.csv")
+write.csv(bildata, file = "bildata.csv")
+```
+
+### 0. Start out by getting your data into "long" format.  This will help with some of the following.
+```{r}
+head(CCdata)
+CCdatalong <- melt(CCdata, id.vars = c("ID","Lang","Blk","BlkTrlNum","TrlNum","Tar","Cue","TarPos","TarDir"))
+head(CCdatalong)
+```
+
+### 1. Pick a single numerical variable from your data.  Use `ggplot` to plot a histogram and a density plot (separately).
+   - Try some different values for `binwidth` for the histogram.
+   - Try some different values for `adjust` for the density plot.
+```{r}
+# create list to store all plots made in RMD file:
+myplots <- list() 
+
+# create and save plot:
+myplots[[length(myplots) + 1]]  <- ggplot(CCdata, aes(RT)) + geom_histogram(binwidth = 0.5, fill = "darkturquoise") 
+# display plot:
+myplots[[length(myplots)]] 
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_histogram(binwidth = 1, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]] 
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_histogram(binwidth = 10, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_histogram(binwidth = 20, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]] 
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_density(adjust = 0.5, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]] 
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_density(adjust = 1, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]] 
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(RT)) + geom_density(adjust = 5, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]] 
+```
+
+### 2. How does the distribution look?  Try transforming the variable and try to get it to look more normal (i.e., more Gaussian).  If it already looks normal, do something to it to make it look non-normal.
+```{r}
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT))) + geom_density(adjust = 5, fill = "darkturquoise")
+# display plot:
+myplots[[length(myplots)]]  
+```
+
+### 3. Is there a factor that you can use to break up this variable into groups of observations?  If not, reshape your data so that there is, or create a factor if necessary.  Then, do the following:
+   - Plot it as a density plot, mapping `color` to the factor
+   - Same, but try using `fill` instead of `color`
+   - Same, using `linetype` instead of `color`
+   - Plot the data as a boxplot, with the factor as `x` and the numerical variable as `y`
+```{r}
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT), color = Tar)) + 
+  geom_density(adjust = 5) +
+  theme_minimal()
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT), fill = Tar)) +
+  geom_density(adjust = 5) +
+  theme_minimal()
+# display plot:
+myplots[[length(myplots)]]   
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT), linetype = Tar)) +
+  geom_density(adjust = 5) +
+  theme_minimal()
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(x = Tar, y = log(RT))) +
+  geom_boxplot() +
+  theme_minimal()
+# display plot:
+myplots[[length(myplots)]]  
+```
+
+### 4. Now let's look at breaking up a histogram across a factor.  With the same variables you used in #3:
+   - Plot a histogram, but use faceting to display them, one above the other.
+   - Try mapping the factor to `color` or `fill`, to see what that looks like.
+   - Which one seems most useful or informative for your data, and why?
+```{r}
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT))) + 
+  geom_histogram(aes(fill = Tar)) + 
+  facet_grid(Tar ~ .) +
+  theme_minimal()  
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(CCdata, aes(log(RT))) + 
+  geom_histogram(aes(color = Tar)) + 
+  facet_grid(Tar ~ .) +
+  theme_minimal()  
+# display plot:
+myplots[[length(myplots)]]  
+```
+
+### 5. Now find two numerical variables.  You may need to reshape your data.  For example, if you have one numerical variable and a "condition" factor, you could use `dcast` to spread that variable across multiple columns (one per level of the factor).  Once you have two numerical variables:
+   - Create a scatterplot, with one variable mapped to `x` and the other to `y`.
+   - Plot a "loess" smoother on top of the scatterplot
+   - Plot a regression line on top of the scatterplot (instead of the loess)
+Because each participant has 288 trials, a scatterplot with every trial for every participant seemed like it would be overwhelming.  So in the below code, I create a new dataframe that contains the average RT for the two target types (congruent and incongruent) for each participant, and then make a scatterplot using those values.
+```{r}
+aggCC <- dcast(CCdata, ID ~ Tar, value.var = "RT", fun.aggregate = mean)
+
+head(aggCC)
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(aggCC, aes (x = Congruent, y = Incongruent)) +
+  geom_point() +
+  theme_minimal()  
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(aggCC, aes (x = Congruent, y = Incongruent)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+# display plot:
+myplots[[length(myplots)]]  
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(aggCC, aes (x = Congruent, y = Incongruent)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_minimal()  
+# display plot:
+myplots[[length(myplots)]]  
+```
+
+### 6. Are there any other factors that split up the variable plotted in #5?  If so try the following:
+   - Map the factor to `color`
+   - Facet by the factor
+```{r}
+aggCC <- dcast(CCdata, ID + Lang ~ Tar, value.var = "RT", fun.aggregate = mean)
+
+head(aggCC)
+
+# create and save plot:
+myplots[[length(myplots) + 1]] <- ggplot(aggCC, aes (x = Congruent, y = Incongruent)) +
+  geom_point(aes(color = Lang)) +
+  facet_wrap( ~ Lang) +
+  theme_minimal()  
+# display plot:
+myplots[[length(myplots)]]  
+```
+
+### 7. Output all of the plots above as a single PDF.
+```{r}
+pdf('myplots.pdf', onefile=TRUE)
+numplots <- length(myplots)
+
+for (i in 1:numplots) {
+    plot(myplots[[i]])
+}
+dev.off()
+```
+
+### 8. Is there a better type of visualization for your data?  What numbers would you like to be able to visualize better?  Be as explicit as possible, and write some "pseudo-code" to ilustrate what you think you would like.
+It would be more useful to visualize my data using bar graphs to view average reaction times by condition or participant language, or maybe boxplots.  I wrote the code for the boxplots below.
+```{r}
+ggplot(mydata, aes (x = Tar, y = RT)) +
+  geom_boxplot(aes(color = Tar)) +
+  facet_wrap( ~ Lang) +
+  theme_minimal()  
+```
+
+### 9. Save your Markdown document that answers all of these questions (with code) as well as your PDF, and commit them as changes to your git homework repository.  Push those changes to GitHub by Monday morning at 9am.

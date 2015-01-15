@@ -1,0 +1,171 @@
+---
+title: "Day 4 Homework"
+output:
+  html_document:
+    fig_height: 3
+    fig_width: 5
+    highlight: null
+    theme: journal
+---
+
+### 1. Change the column names of your data to something easier to work with.  If you like your column names, change them into something else reasonable, just for practice.
+```{r}
+mydata <- read.csv("mydataHW4.csv")
+head(mydata)
+
+oldcolnames <- colnames(mydata) # check what your column names are
+newcolnames <- c("ID","Lang", "Blk", "BlkTrlNum","TrlNum","Tar","Cue","TarPos","TarDir","Acc","RT","QP","DELE","Eng","Span","CSFreq","CSExp")
+colnames(mydata) <- newcolnames
+data.frame(oldcolnames, newcolnames) 
+```
+
+### 2. List ALL the issues you can see where it looks like your data is being read in a weird way.  If your data looks perfect, find some way to mess it up :-)
+```{r}
+summary(mydata)
+```
+- BlkTrlNum and TrlNum (block and overall trial number) should be factors, not numeric
+- Because half of my participants are monolingual English speakers, they don't have data for the Spanish or codeswitching-related measures, so they have NAs in those columns (i.e., columns 13:17); this isn't an R-related problem, but it's something I need to remember when doing analyses/plotting
+
+### 3. Pick one or two of the most egregious or problematic of the issues in #2 and fix them.
+I'll make BlkTrlNum and TrlNum characters and append a string to avoid future problems, and then factor them.
+```{r}
+mydata$TrlNum <- paste("T", as.character(mydata$TrlNum), sep = "")
+mydata$TrlNum <- factor(mydata$TrlNum)
+
+mydata$BlkTrlNum <- paste("T", as.character(mydata$BlkTrlNum), sep = "")
+mydata$BlkTrlNum <- factor(mydata$BlkTrlNum)
+
+head(mydata)
+summary(mydata)
+```
+
+### 4. Check for NAs, and report where you see them (try to pinpoint where they are, not just "5 NAs in column seven".
+```{r}
+summary(mydata)
+```
+
+I know this isn't the most efficient solution, but I couldn't come up with a better one. Doing summary(data) indicates that there are NAs in columns 13:17, so these vectors store their row indices:
+```{r}
+NAsCol13 <- which(is.na(mydata[,13])) 
+NAsCol14 <- which(is.na(mydata[,14]))
+NAsCol15 <- which(is.na(mydata[,15]))
+NAsCol16 <- which(is.na(mydata[,16]))
+NAsCol17 <- which(is.na(mydata[,17]))
+```
+
+### 5. Decide what you think you should do about the NAs, and say why.  If you can, try to implement this decision.
+It might be useful to distinguish between NAs that exist because of missing data and NAs that exist because a participant shouldn't have data (i.e., a monolingual participant that shouldn't have data for the Spanish proficiency test). Therefore, I'll change the NAs for monolingual participants to "M." 
+```{r}
+mydata$DELE[mydata$Lang == "M"] <- "M"
+mydata$QP[mydata$Lang == "M"] <- "M"
+mydata$Eng[mydata$Lang == "M"] <- "M"
+mydata$Span[mydata$Lang == "M"] <- "M"
+mydata$CSFreq[mydata$Lang == "M"] <- "M"
+mydata$CSExp[mydata$Lang == "M"] <- "M"
+
+head(mydata)
+summary(mydata)
+```
+
+### 6. Remove any problematic rows and/or columns.  Say why you want to remove them.  If there aren't any problems, describe why you think there are no problems.
+My dataframe contains data from a few different tasks: columns 1-2 contain identification information, columns 3-11 contain data from a cognitive control task (all participants have data for this task), and then the remaining columns contain data from language proficiency tests and survey questions that only half of the participants completed.  Because the cognitive control task has many trials, each participant has many rows of data for that task.  Howevever, this means that their data for the language proficiency tests and survey questions are repeated on many rows.  Furthermore, because only half of the participants have data in columns 12 and on, the remaining half of the participants have missing data in these columns (which I replaced with "M"s in the previous question).  Therefore, I'll create two separate dataframes below.  
+  
+New dataframe with only the cognitive control data:
+```{r}
+CCdata <- mydata[, 1:11]
+head(CCdata)
+```
+
+New dataframe with only the bilingual participant language test and survey data:
+```{r}
+bildata <- mydata[, c(1:2, 12:17)]
+bildata <- droplevels(subset(bildata, Lang == "B"))
+summary(bildata)
+head(bildata)
+```
+
+In the new dataframe that contains the bilingual participant language test and survey data (bildata), for each participant, each line is the same and is repeated 288 times (because there were 288 trials in the cognitive control task) so I can delete every line but the first, which I do below:
+```{r}
+IDs <- unique(bildata$ID) # create a vector of all unique IDs
+length(IDs) # check how many unique IDs there are
+
+# The below code creates a vector of numbers that start at 1 and adds 288 to each preceding number 32 times (because there are 32 ID numbers and each one repeats 288 times):
+temp <- 1 # vector to contain numbers
+x <- 1 # current number to be stored in vector
+for (i in 1:32) {
+  x <- x + 288
+  temp <- c(temp, x)
+}
+bildata <- bildata[temp, ]
+summary(bildata$ID) # this shows that there is one NA in the new dataframe, so I'll remove that
+bildata <- bildata[!is.na(bildata$ID), ] 
+```
+
+### 7. Re-code at least one factor.  Provide a table that shows the correspondence between old levels and new levels.
+**RECODING #1:** Recoding column CSFreq, which contains survey data with responses that ranged from 0 to 4, corresponding to never, rarely, sometimes, often, and always, respectively:
+```{r}
+head(bildata)
+bildata$CSFreq <- as.character(bildata$CSFreq) # converting numeric values to characters
+oldlevels <- unique(bildata$CSFreq) # making vector of old levels
+summary(bildata$CSFreq) # checking my work
+bildata$CSFreq[bildata$CSFreq=="0"] <- "never"
+bildata$CSFreq[bildata$CSFreq=="1"] <- "rarely"
+bildata$CSFreq[bildata$CSFreq=="2"] <- "sometimes"
+bildata$CSFreq[bildata$CSFreq=="3"] <- "often"
+bildata$CSFreq[bildata$CSFreq=="4"] <- "always"
+bildata$CSFreq <- factor(bildata$CSFreq) 
+newlevels <- levels(bildata$CSFreq) # making vector of new levels
+summary(bildata$CSFreq) # checking my work
+data.frame(oldlevels, newlevels) # making dataframe of new and old level names
+```
+
+**RECODING #2:** Recoding column CSExp, which contains survey data with responses that ranged from 0 to 4, corresponding to never, rarely, sometimes, often, and always, respectively:
+```{r}
+bildata$CSExp <- as.character(bildata$CSExp) # converting numeric values to characters
+summary(bildata$CSExp) # checking my work
+bildata$CSExp[bildata$CSExp=="0"] <- "never"
+bildata$CSExp[bildata$CSExp=="1"] <- "rarely"
+bildata$CSExp[bildata$CSExp=="2"] <- "sometimes"
+bildata$CSExp[bildata$CSExp=="3"] <- "often"
+bildata$CSExp[bildata$CSExp=="4"] <- "always"
+bildata$CSExp <- factor(bildata$CSExp) 
+newlevels <- levels(bildata$CSExp) # making vector of new levels
+summary(bildata$CSExp) # checking my work
+data.frame(oldlevels, newlevels) # making dataframe of new and old level names
+```
+
+### 8. Run TWO DIFFERENT simple analyses or statistical tests, such as linear regression (`lm()`), logistic regression (`glm()`), correlation test (`cor.test()`), t-test (`t.test()`), or non-parametric tests (e.g., `wilcox.test()`).  For each of these:
+  - Describe why you are doing this analysis, i.e., what question is it answering?
+  - I won't judge you on statistical expertise!  (though I will make comments if I think I can be helpful)
+  - Report some key statistics from the analysis, using inline code
+```{r}
+summary(bildata)
+```
+
+For some reason R is treating columns 3:6 as characters, so I'm converting them to numeric so I can calculate correlations:
+```{r}
+bildata$Eng <- as.numeric(bildata$Eng)
+bildata$Span <- as.numeric(bildata$Span)
+bildata$QP <- as.numeric(bildata$QP)
+bildata$DELE <- as.numeric(bildata$DELE)
+summary(bildata)
+```
+
+**TEST 1:** Is there a correlation between bilingual participants' self-reported English proficiency and Spanish proficiency?
+```{r}
+mycor <- cor.test(bildata$Eng, bildata$Span, alternative = "two.sided", method = "spearman")
+names(mycor)
+est <- mycor$estimate
+pval <- mycor$p.value
+```
+
+There is a `r round(est, digits=3)` correlation between participants' self-reported English and Spanish proficiency (p < `r round(pval, digits=3)`).  
+  
+**TEST 2:** Is there a correlation between bilingual participants' scores on the English proficiency test and the Spanish proficiency test?
+```{r}
+mycor <- cor.test(bildata$DELE, bildata$QP, alternative = "two.sided", method = "spearman")
+est <- mycor$estimate
+pval <- mycor$p.value
+```
+
+There is a `r round(est, digits=3)` correlation between participants' scores on the English proficiency test and the Spanish proficiency test (p < `r round(pval, digits=3)`).  

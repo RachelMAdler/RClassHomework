@@ -1,0 +1,140 @@
+---
+title: "Day 6 Homework"
+output:
+  html_document:
+    fig_height: 3
+    fig_width: 5
+    highlight: null
+    theme: journal
+---
+
+### 1. Think carefully about your data.  Think about something you would like to do multiple times, to subsets of your data.  
+Reading in and examining data
+```{r}
+library(plyr)
+
+bildata <- read.csv("bildataHW6.csv")
+CCdata <- read.csv("CCdataHW6.csv")
+```
+
+### 2. Write out (in plain English, in the notebook) what you are trying to do
+I want to do two things:
+
+1. I want to make sure that the columns in each of my two dataframes (bildata and CCdata) that should be factored are factored.
+2. I want to remove the two monolingual and two bilingual participants from both dataframes (CCdata and bildata) who have the lowest accuracy rates.
+
+### 3. Write some "pseudo-code" comments in an R chunk, as an outline
+**A. Factoring columns in dataframes CCdata and bildata**
+```{r}
+# for loop from i = 1 to 9
+  # if i < 3
+    # then factor column i in bildata dataframe
+  # end if statement
+  # factor column i in CCdata dataframe
+# end for loop
+```
+
+**B. Removing the four participants who have the lowest accuracy rates**
+```{r}
+# use ddply() to create a new dataframe ("accSummary") based on CCdata dataframe that contains mean accuracy rate by subject
+# use with() and order() to sort accSummary dataframe by mean accuracy and find IDs corresponding to the two lowest billingual and two lowest monolingual accuracy rates 
+# create a vector using as.vector() of these four IDs
+
+# for loop from i = 1 to length of vector of IDs
+  # use droplevels(subset()) to remove i ID from CCdata dataframe
+  # use droplevels(subset()) to remove i ID from bildata dataframe
+# end for loop
+```
+
+### 4. Write some (real) code that will do what you want ONCE, on one subset of the data.
+**A. Factoring columns in dataframes CCdata and bildata**
+```{r}
+bildata[,1] <- factor(bildata[,1])
+CCdata[,1] <- factor(CCdata[,1])
+```
+
+**B. Removing the four participants who have the lowest accuracy rates**
+```{r}
+accSummary <- ddply(CCdata, c("ID","Lang"), summarise, meanAcc = round(mean(Acc),3), AccSD = round(sd(Acc), 3))
+
+head(accSummary)
+
+accSummary.sorted <- accSummary[with(accSummary, order(meanAcc)), ]
+
+accSummary.sorted
+```
+
+The above output indicates that subjects 131, 176, 145, and 121 have the four lowest accuracy rates, so I'll remove 131 from the bildata and CCdata dataframes
+```{r}
+CCdata.temp <- droplevels(subset(CCdata, ID != "S131"))
+bildata.temp <- droplevels(subset(bildata, ID != "S131"))
+```
+
+### 5. Copy that code chunk, and convert it into a loop, which will do what you want over all the groups, concatenating the results.
+**A. Factoring columns in dataframes CCdata and bildata**  
+I want to factor columns 1-2 in bildata and columns 1-9 in CCdata, but I'd like to do both in one for loop, so I'll use an embedded if statement
+```{r}
+for (i in 1:9 ) {
+  if(i < 3) {     
+    bildata[,i] <- factor(bildata[,i])
+  }
+  CCdata[,i] <- factor(CCdata[,i])
+}
+```
+
+Checking my work
+```{r}
+for (i in 1:9 ) {
+  if(i < 3) {   
+    print(is.factor(bildata[,i]))
+  }
+  print(is.factor(CCdata[,i]))
+}  
+```
+
+**B. Removing the four participants who have the lowest accuracy rates**
+```{r}
+accSummary.sorted 
+
+IDs.to.remove <- as.vector(accSummary.sorted[1:4, 1], mode = "character")
+IDs.to.remove
+
+for (i in 1:length(IDs.to.remove)) {
+  CCdata <- droplevels(subset(CCdata, ID != IDs.to.remove[i])) # remove ID from CCdata
+  bildata <- droplevels(subset(bildata, ID != IDs.to.remove[i])) # remove ID from bildata
+  }
+```
+
+Checking my work
+```{r}
+unique(CCdata$ID)
+length(unique(CCdata$ID)) # should be 60
+
+unique(bildata$ID)
+length(unique(bildata$ID)) # should be 30
+```
+
+### 6. Copy that loop again, and at a condition (`if`) statement to add some further control about ignoring some groups or some other conditional operation.
+**A. Factoring columns in dataframes CCdata and bildata**  
+```{r}
+for (i in 1:9 ) {
+  if(i < 3) {    
+    if(is.factor(bildata[,i]) == FALSE) {  # check to see whether current column is already factored; if it isn't, then factor it
+      bildata[,i] <- factor(bildata[,i])
+    }
+  }
+  if(is.factor(CCdata[,i]) == FALSE) {   # check to see whether current column is already factored; if it isn't, then factor it
+    CCdata[,i] <- factor(CCdata[,i])
+  }
+}
+```
+
+Checking my work
+```{r}
+for (i in 1:9 ) {
+  if(i < 3) {   
+    print(is.factor(bildata[,i])) 
+  }
+  print(is.factor(CCdata[,i]))
+}  
+```
