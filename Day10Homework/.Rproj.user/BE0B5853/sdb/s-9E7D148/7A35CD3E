@@ -1,0 +1,16 @@
+{
+    "contents" : "---\ntitle: \"Day 6 Practice GitHub\"\noutput: html_document\n---\n\n1. Assemble all of your homework up to this point into a folder, that is NOT itself contained inside a git repository.\n\n2. Start a repo with `git init`\n\n3. Create the repo on GitHub\n\n4. Follow the instructions to make your first \"push\"\n\n5. Check GitHub yo make sure it pushed correctly.\n\n6. Email me your repo address.\n\n\n1. log in to github\n2. make new repository\n3. create folder on your computer and make it the same name as your repository\n4. right click, copy path, terminal path\n5. open terminal\n6. type 'cd' and then paste your path\n\ntouch README.md\ngit init\ngit add README.md\ngit commit -m \"first commit\"\ngit remote add origin https://github.com/RachelMAdler/MyHomework.git\ngit push -u origin master\n\n\ngit config --global user.name \"RachelMAdler\"\ngit config --global user.email radler1@umd.edu\n\n\n\n7. type 'git init'\n8. follow directions on github where it says \"…or push an existing repository from the command line\"\n  for me, it says to type:\n  'git remote add origin https://github.com/RachelMAdler/MyHomework.git'\n  and then to type:\n  'git push -u origin master'",
+    "created" : 1421530964571.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1820591763",
+    "id" : "7A35CD3E",
+    "lastKnownWriteTime" : 1421168073,
+    "path" : "~/Documents/UMD and CASL/Classes/R Class/Day 6/day6_practice_github.Rmd",
+    "project_path" : null,
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}
